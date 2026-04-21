@@ -1,0 +1,26 @@
+Task 1: Ingestion
+Create a CLI entry point that accepts a dependency file path. Extract the list of package names and their currently specified versions.
+
+Task 2: Vulnerability Intelligence
+Query a vulnerability database for each extracted package. Identify and record any CVE IDs, severity levels, and the minimum safe patched versions.
+
+Task 3: Exploitability Scoring
+For every identified CVE, retrieve its current EPSS (Exploit Prediction Scoring System) score.
+
+Task 4: Abandonware (Zombie) Detection
+Retrieve the release date for each package's current version from its public registry. Flag any package version that is older than 24 months.
+
+Task 5: Typosquatting Analysis
+Compare the extracted package names against a baseline list of the 50 most popular packages. Flag any names that are near-matches but not exact matches.
+
+Task 6: AI Threat Translation
+Create an optional routine that accepts raw CVE descriptions and returns a non-technical, two-sentence summary using an LLM.
+
+Task 7: Terminal Reporting
+Output a structured terminal report displaying all flagged issues, vulnerabilities, and scores.
+
+Task 8: Automated Remediation
+Output a new, secure dependency file that updates vulnerable packages to their minimum safe patched versions.
+
+Task 9: CI/CD Enforcement
+Enforce build failure by returning a non-zero exit code if any critical vulnerabilities or typosquatting risks are detected. Return a zero exit code if the scan passes.
