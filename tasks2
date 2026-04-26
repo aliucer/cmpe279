@@ -1,0 +1,78 @@
+1. Final project recommendation
+
+Build a policy-enforced software supply-chain security gate for a small containerized web application in GitHub Actions. The core deliverable is a CI/CD release pipeline that generates a software bill of materials (SBOM) with Syft, scans the build with Trivy, produces signed build provenance with GitHub artifact attestations, and blocks publication unless OPA/Conftest policies pass.
+
+2. Title
+
+Design and Evaluation of a Policy-Enforced Software Supply-Chain Security Gate for Containerized Applications
+
+3. Description
+
+Use one tiny demo application—preferably a minimal Node.js/Express or Python/FastAPI service—so the app stays secondary to the security pipeline. The threat model should cover four realistic failures: a compromised third-party GitHub Action, a vulnerable dependency or base image, a tampered or unverifiable build artifact, and an over-privileged CI credential. The workflow itself should be hardened with full-length SHA pinning for third-party actions, least-privilege permissions, and OpenID Connect (OIDC)-based authentication instead of long-lived cloud secrets. GitHub supports policies that require full-length SHA pinning, warns about the risk of third-party actions, and documents OIDC as a way to avoid storing long-lived secrets in workflows.
+
+4. Why this is the best choice now
+
+This is the best fit in April 2026 because software supply-chain integrity is still one of the most active practical problems in software security. CISA issued alerts on the March 2025 compromise of the tj-actions/changed-files GitHub Action and on the April 20, 2026 compromise of the axios npm package; CISA also continues to describe SBOM as a foundational building block for software security and software supply-chain risk management. CISA and 19 partners published a shared global vision for SBOMs in September 2025, the EU Cyber Resilience Act’s reporting obligations begin on September 11, 2026, and OWASP Top 10:2025 still includes Software or Data Integrity Failures.
+
+It is also the best solo-student choice because the toolchain is unusually mature. GitHub’s March 2026 Actions security roadmap centers on secure defaults, policy controls, and CI/CD observability. GitHub artifact attestations are available on all current GitHub plans, can be verified with the GitHub CLI, and GitHub documents that reusable workflows plus artifact attestations can help organizations move toward SLSA v1.0 Build Level 3; for public repositories, those attestations use the Sigstore public good instance. Syft generates SBOMs in standard formats, Trivy can scan repositories, images, and SBOMs, and OPA/Conftest is meant for policy checks on structured data in CI/CD.
+
+Compared with an LLM-security project, the evaluation here is cleaner and less dependent on model behavior. Compared with a memory-safe rewrite, the scope stays centered on security technologies rather than a large code migration.
+
+5. Architecture
+
+Developer push / pull request
+    -> GitHub Actions workflow
+        -> checkout / build / unit test
+        -> Syft SBOM generation
+        -> Trivy vulnerability scan
+        -> GitHub artifact attestation for build provenance
+        -> OPA/Conftest policy evaluation
+             - actions pinned to full SHAs
+             - minimal workflow permissions
+             - OIDC used instead of long-lived secrets
+             - no critical vulnerabilities
+             - required attestation verifies
+    -> PASS: publish release image and evidence artifacts
+    -> FAIL: block release and emit policy report
+
+Consumer / verifier
+    -> gh attestation verify before run or deploy
+
+Treat the policy engine as the single release gate. Everything else produces evidence for that gate: SBOM metadata from Syft, vulnerability evidence from Trivy, provenance evidence from GitHub artifact attestations, and workflow-configuration evidence from the CI files themselves.
+
+6. Implementation approach
+
+Keep the scope tight: one repository, one app, one container image, one CI platform, one policy engine.
+
+Create a minimal containerized demo app.
+Seed two or three controlled failures early, such as one unpinned third-party action and one deliberately outdated dependency or vulnerable base image.
+Harden the workflow with full-length SHA pinning, least-privilege permissions, and OIDC-based authentication.
+Generate an SBOM with Syft and archive it as a build artifact.
+Run Trivy on the repository and/or built image, outputting machine-readable results.
+Generate build provenance with GitHub artifact attestations.
+Write 4–5 Rego policies in OPA/Conftest and deny release if policy fails.
+In the report, map each control to NIST SSDF practices so the paper has a standards-based evaluation frame; NIST still positions SSDF as a common vocabulary for secure software development.
+
+Do not build a custom vulnerability scanner. Do not make Kubernetes admission control part of the core milestone. Your contribution is the design of the release policy, the integration of modern supply-chain controls, and the evaluation of how well that gate stops realistic failures.
+
+7. Demo/evaluation plan
+
+For an 8-minute presentation, show one positive case and three negative cases.
+
+Workflow integrity failure: reference a third-party action by tag instead of full SHA and show the release blocked by policy.
+Vulnerability failure: use a deliberately vulnerable dependency or base image and show Trivy blocking the release.
+Provenance failure: remove or invalidate the attestation step and show verification/policy failure.
+Clean release: fix the workflow and dependency, rerun the pipeline, publish the artifact, and verify it with gh attestation verify.
+
+GitHub’s attestation model is designed so consumers can verify where and how software was built and use that information in security policy, which makes the demo unusually crisp for a class project. Measure three things in the report: detection coverage on seeded failures, false positives on a clean build, and the additional CI runtime introduced by the security controls.
+
+8. Risks
+
+Scope creep. The biggest risk is turning this into a platform project. Keep it to one repo, one pipeline, and a small policy set.
+Attestation overclaiming. GitHub explicitly warns that artifact attestations are not a guarantee that an artifact is secure. They prove provenance, not absence of vulnerabilities, so pair them with Trivy and policy checks.
+Vulnerability-data churn. CVE results can change over time. Freeze your demo cases early and record scan dates and tool outputs in the report.
+GitHub dependence. This design is intentionally GitHub-centric because that is what keeps it feasible for one student. Note portability as future work, not as core scope.
+
+9. Final polished proposal paragraph
+
+This project will design and evaluate a policy-enforced software supply-chain security gate for a containerized application using GitHub Actions. The system will harden the CI workflow through full-SHA action pinning, least-privilege permissions, and OIDC-based authentication, generate an SBOM with Syft, scan the build with Trivy, create signed build provenance through GitHub artifact attestations, and enforce release rules with OPA/Conftest before publication. The evaluation will use controlled negative and positive cases to measure detection coverage, false positives, and CI overhead, demonstrating a practical defense against modern supply-chain threats such as compromised CI dependencies, vulnerable packages, and unverifiable build artifacts. The project aligns with current SSDF, SBOM, and software-integrity priorities and is appropriately scoped for a single-student implementation, an 8-minute demo, and an IEEE-style final report.
